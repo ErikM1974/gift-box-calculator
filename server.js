@@ -21,54 +21,59 @@ app.use(express.json());
 
 async function refreshAccessToken() {
     console.log('Refreshing access token...');
-    const response = await fetch('https://c3eku948.caspio.com/oauth/token', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-            grant_type: 'refresh_token',
-            client_id: process.env.CASPIO_CLIENT_ID,
-            refresh_token: refreshToken,
-        }),
-    });
+    try {
+        const response = await fetch('https://c3eku948.caspio.com/oauth/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                client_id: process.env.CASPIO_CLIENT_ID,
+                refresh_token: refreshToken,
+            }),
+        });
 
-    if (!response.ok) {
-        throw new Error('Failed to refresh token');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to refresh token. Status: ${response.status}, Response: ${errorText}`);
+        }
+
+        const data = await response.json();
+        accessToken = data.access_token;
+        tokenExpiration = Date.now() + (data.expires_in * 1000);
+        console.log('Access token refreshed successfully');
+    } catch (error) {
+        console.error('Error in refreshAccessToken:', error);
+        throw error;
     }
-
-    const data = await response.json();
-    accessToken = data.access_token;
-    tokenExpiration = Date.now() + (data.expires_in * 1000);
-    console.log('Access token refreshed successfully');
 }
 
 app.get('/api/garment/:styleNumber', async (req, res) => {
     console.log(`Received request for style number: ${req.params.styleNumber}`);
-    if (Date.now() >= tokenExpiration) {
-        try {
-            await refreshAccessToken();
-        } catch (error) {
-            console.error('Error refreshing token:', error);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
-    const { styleNumber } = req.params;
-    const apiUrl = process.env.CASPIO_API_URL;
-    const headers = {
-        'accept': 'application/json',
-        'Authorization': `bearer ${accessToken}`
-    };
-
     try {
+        if (Date.now() >= tokenExpiration) {
+            await refreshAccessToken();
+        }
+
+        const { styleNumber } = req.params;
+        const apiUrl = process.env.CASPIO_API_URL;
+        const headers = {
+            'accept': 'application/json',
+            'Authorization': `bearer ${accessToken}`
+        };
+
         console.log(`Fetching data from Caspio API for style number: ${styleNumber}`);
+        console.log(`API URL: ${apiUrl}`);
+        console.log(`Headers: ${JSON.stringify(headers)}`);
+
         const response = await fetch(`${apiUrl}?q.where=STYLE_No='${styleNumber}'&q.limit=1`, { headers });
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            const errorText = await response.text();
+            throw new Error(`Network response was not ok. Status: ${response.status}, Response: ${errorText}`);
         }
         const data = await response.json();
-        console.log('Received data from Caspio API:', data);
+        console.log('Received data from Caspio API:', JSON.stringify(data));
         if (data.Result && data.Result.length > 0) {
             const item = data.Result[0];
             res.json({
@@ -80,8 +85,8 @@ app.get('/api/garment/:styleNumber', async (req, res) => {
             res.status(404).json({ error: 'Item not found' });
         }
     } catch (error) {
-        console.error('Error fetching data:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error in /api/garment/:styleNumber:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 
