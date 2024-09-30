@@ -20,7 +20,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 async function refreshAccessToken() {
-    console.log('Refreshing access token...');
+    console.log('Attempting to refresh access token...');
+    console.log('Current time:', new Date().toISOString());
+    console.log('Token expiration:', new Date(tokenExpiration).toISOString());
     try {
         const response = await fetch('https://c3eku948.caspio.com/oauth/token', {
             method: 'POST',
@@ -43,6 +45,7 @@ async function refreshAccessToken() {
         accessToken = data.access_token;
         tokenExpiration = Date.now() + (data.expires_in * 1000);
         console.log('Access token refreshed successfully');
+        console.log('New token expiration:', new Date(tokenExpiration).toISOString());
     } catch (error) {
         console.error('Error in refreshAccessToken:', error);
         throw error;
@@ -51,9 +54,14 @@ async function refreshAccessToken() {
 
 app.get('/api/garment/:styleNumber', async (req, res) => {
     console.log(`Received request for style number: ${req.params.styleNumber}`);
+    console.log('Current time:', new Date().toISOString());
+    console.log('Token expiration:', new Date(tokenExpiration).toISOString());
     try {
         if (Date.now() >= tokenExpiration) {
+            console.log('Token expired, refreshing...');
             await refreshAccessToken();
+        } else {
+            console.log('Token still valid, proceeding with request');
         }
 
         const { styleNumber } = req.params;
