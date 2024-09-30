@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Box Price Calculator - Northwest Custom Apparel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h2 {
+            color: #2F4F4F;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .form-section {
+            background-color: #F9F9F9;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #CCC;
+        }
+        .form-section h3 {
+            margin-top: 0;
+        }
+        .form-section table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .form-section table, .form-section th, .form-section td {
+            border: 1px solid #CCC;
+        }
+        .form-section th, .form-section td {
+            padding: 8px;
+            text-align: center;
+        }
+        .add-item-btn, .calculate-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            margin-top: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        .add-item-btn:hover, .calculate-btn:hover {
+            background-color: #45a049;
+        }
+        .result-section {
+            background-color: #E8F5E9;
+            padding: 15px;
+            border: 1px solid #A5D6A7;
+        }
+        .result-section h3 {
+            margin-top: 0;
+        }
+        .total-cost {
+            font-size: 1.5em;
+            color: #388E3C;
+            text-align: center;
+        }
+        .itemized-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .itemized-table th, .itemized-table td {
+            border: 1px solid #CCC;
+            padding: 8px;
+            text-align: left;
+        }
+        .itemized-table th {
+            background-color: #DCDCDC;
+        }
+        .right-align {
+            text-align: right;
+        }
+        .bold-text {
+            font-weight: bold;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            padding-top: 60px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 80%;
+        }
+        .modal-content, #gloveImage {
+            border-radius: 5px;
+        }
+        #caption {
+            margin: auto;
+            display: block;
+            width: 80%;
+            text-align: center;
+            color: #fff;
+            padding: 10px 0;
+        }
+        .close-modal {
+            position: absolute;
+            top: 30px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .close-modal:hover,
+        .close-modal:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .glove-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .glove-section img {
+            max-width: 150px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .emphasize {
+            font-size: 1.2em;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .download-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 15px;
+            margin-top: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        .download-btn:hover {
+            background-color: #0b7dda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Gift Box Price Calculator</h2>
+        <div class="form-section">
+            <h3>1. Gift Box Details</h3>
+            <label for="numberOfBoxes"><strong>Number of Gift Boxes:</strong></label>
+            <input type="number" id="numberOfBoxes" min="1" value="1" style="width: 60px; margin-left: 10px;">
+        </div>
+
+        <div class="form-section">
+            <h3>2. Add Garments to the Gift Box</h3>
+            <table id="garmentTable">
+                <tr>
+                    <th>Style Number</th>
+                    <th>Description</th>
+                    <th>Price at 12-23 Units</th>
+                    <th>Action</th>
+                </tr>
+                <!-- Rows will be added here -->
+            </table>
+            <button class="add-item-btn" onclick="addGarmentRow()">Add Garment</button>
+        </div>
+
+        <div class="form-section">
+            <h3>3. Add Cap to the Gift Box (Optional)</h3>
+            <label>
+                <input type="checkbox" id="includeCap" onclick="toggleCapSection()">
+                Include Cap
+            </label>
+            <div id="capSection" style="display: none; margin-top: 10px;">
+                <label for="capStyle"><strong>Cap Style Number:</strong></label>
+                <input type="text" id="capStyle" style="margin-left: 10px;">
+                <br><br>
+                <label for="capPrice"><strong>Cap Price at 24-143 Units:</strong></label>
+                <input type="number" id="capPrice" min="0" step="0.01" style="margin-left: 10px;">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>4. Calculate Total Cost per Box</h3>
+            <button class="calculate-btn" onclick="calculateTotal()">Calculate</button>
+        </div>
+
+        <div class="result-section" id="resultSection" style="display: none;">
+            <h3>Order Summary</h3>
+            <p><strong>Number of Gift Boxes:</strong> <span id="summaryNumberOfBoxes"></span></p>
+
+            <h4>Itemized Costs per Gift Box:</h4>
+            <table class="itemized-table">
+                <tr>
+                    <th>Item</th>
+                    <th>Description</th>
+                    <th class="right-align">Unit Price</th>
+                </tr>
+                <tbody id="itemizedCosts"></tbody>
+                <tr>
+                    <td colspan="2" class="bold-text">Subtotal</td>
+                    <td class="right-align bold-text">$<span id="subtotalBeforeFees"></span></td>
+                </tr>
+                <tr>
+                    <td colspan="2">Packaging &amp; Handling Fee</td>
+                    <td class="right-align">$<span id="summaryPackagingHandling"></span></td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="bold-text">Total Before Discount</td>
+                    <td class="right-align bold-text">$<span id="summarySubtotal"></span></td>
+                </tr>
+                <tr>
+                    <td colspan="2">Volume Discount (<span id="summaryDiscountRate"></span>)</td>
+                    <td class="right-align">-$<span id="summaryDiscountAmount"></span></td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="bold-text">Total Price per Gift Box</td>
+                    <td class="right-align bold-text">$<span id="summaryTotalCost"></span></td>
+                </tr>
+            </table>
+
+            <p class="total-cost">
+                <strong>Total Order Cost:</strong> $<span id="summaryTotalOrderCost"></span><br>
+                <small>(<span id="summaryNumberOfBoxes2"></span> Gift Boxes × $<span id="summaryTotalCost2"></span> per Gift Box)</small>
+            </p>
+
+            <h4>Free Bonus:</h4>
+            <div class="glove-section">
+                <p class="emphasize">Total Free Gloves Value: $<span id="totalGlovesValue"></span></p>
+                <p>You are receiving <strong>free Carhartt gloves</strong> with a retail value of <strong>$19.00</strong> per box!</p>
+                <img id="gloveImage" src="https://cdn.caspio.com/A0E15000/Safety%20Stripes/CTGD0794_Black%20Barley_FA24_Cover_CT_1_Editorial_Product.png?ver=1" alt="Carhartt Gloves">
+            </div>
+
+            <!-- The Modal -->
+            <div id="myModal" class="modal">
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <img class="modal-content" id="imgModal">
+                <div id="caption"></div>
+            </div>
+
+            <h4>What's Included:</h4>
+            <ul>
+                <li>All items listed above with custom embroidery.</li>
+                <li>Free Carhartt gloves with each gift box.</li>
+                <li>Personalized packaging with each employee's name.</li>
+            </ul>
+
+            <!-- Add Download PDF button -->
+            <button class="download-btn" onclick="downloadPDF()">Download Quote as PDF</button>
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>
