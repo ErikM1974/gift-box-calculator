@@ -1,12 +1,18 @@
 let garmentRowCount = 0;
 
 async function fetchGarmentData(styleNumber) {
+    console.log(`Fetching data for style number: ${styleNumber}`);
     try {
         const response = await fetch(`/api/garment/${styleNumber}`);
+        console.log(`Response status: ${response.status}`);
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Error response: ${errorText}`);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return await response.json();
+        const data = await response.json();
+        console.log('Received data:', data);
+        return data;
     } catch (error) {
         console.error('Error fetching data:', error);
         return null;
@@ -55,11 +61,14 @@ async function addGarmentRow() {
             alert('Please enter a valid style number.');
             return;
         }
+        console.log(`Attempting to fetch data for style number: ${this.value}`);
         const garmentData = await fetchGarmentData(this.value);
         if (garmentData) {
+            console.log('Successfully fetched garment data:', garmentData);
             descriptionInput.value = garmentData.description;
             priceInput.value = garmentData.price;
         } else {
+            console.error('Failed to fetch garment data');
             alert('Unable to fetch garment data. Please check the style number and try again.');
             this.value = '';
         }
@@ -77,10 +86,13 @@ function toggleCapSection() {
 }
 
 async function fetchCapData(styleNumber) {
+    console.log(`Fetching cap data for style number: ${styleNumber}`);
     const garmentData = await fetchGarmentData(styleNumber);
     if (garmentData && garmentData.capPrice) {
+        console.log('Successfully fetched cap data:', garmentData);
         document.getElementById('capPrice').value = garmentData.capPrice;
     } else {
+        console.error('Failed to fetch cap data');
         alert('Unable to fetch cap price. Please enter the price manually.');
     }
 }
